@@ -3,11 +3,12 @@ from roboflow import Roboflow
 import base64
 from PIL import Image, ImageDraw
 from io import BytesIO
-# import pytesseract
+import easyocr
+from difflib import SequenceMatcher
 
 app = Flask(__name__)
 
-txtbbs = {}
+txtbbs = {"aadharno":[0, 0, 0, 0], "details":[0, 0, 0, 0]}
 
 def overlay_boxes(image, predictions):
     draw = ImageDraw.Draw(image)
@@ -26,7 +27,7 @@ def overlay_boxes(image, predictions):
         class_colors = {
             "details": "blue",
             "qr": "green",
-            "image": "yellow",
+            "image": "black",
             "aadharno": "red",
             "goi": "purple",
             "emblem": "orange",
@@ -42,6 +43,24 @@ def overlay_boxes(image, predictions):
         draw.text((x, y), class_name, fill="white")
     print(txtbbs)
     return image
+
+def extraction_of_text(image):
+    reader = easyocr.Reader(['en'])
+    result = reader.readtext(image,paragraph=True)
+    top_left = tuple(result[0][0][0])
+    bottom_right = tuple(result[0][0][2])
+    text = result[0][1]
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    return text
+
+
+def aadhar_number_search(text):
+    aadhar_pattern = re.compile(r'\b\d{4}\s\d{4}\s\d{4}\b')
+    match = aadhar_pattern.search(text)
+    if match:
+        return match.group()
+    else:
+        return None
 
 # def extract_text_from_image(image, bounding_boxes):
     
@@ -95,13 +114,37 @@ def submit():
 
         # Save the image with bounding boxes (optional)
         image_with_boxes.save("output_image.jpg")
-        details_region = image.crop(txtbbs["details"])
-        aadharno_region = image.crop(txtbbs["aadharno"])
-
+        # details_region = image.crop(txtbbs["details"])
+        # aadharno_region = image.crop(txtbbs["aadharno"])
+        reader = easyocr.Reader(['en'])
         # Perform OCR on the cropped regions
         # details_text = pytesseract.image_to_string(details_region)
         # aadharno_text = pytesseract.image_to_string(aadharno_region)
+        # txtbbsread = {}
+        bounding_boxes = [txtbbs["aadharno"], txtbbs["details"]]
+        extracted_text = {0:None, 1:None}
+        temp = -1
+        for box in bounding_boxes:
+            temp+=1
+            if(all(x == 0 for x in box)):
+                continue
+            print(box)
+            x_min, y_min, x_max, y_max = box
+            # Extract text using easyocr with bounding box
+            result = reader.readtext(r"input_image.jpg", allowlist='0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
+                                    text_threshold=0.7, link_threshold=0.4, low_text=0.4,
+                                    decoder='beamsearch', blocklist='')
 
+            # Filter results within the bounding box
+            filtered_results = [text_info for text_info in result if any(x_min < x < x_max and y_min < y < y_max for (x, y) in text_info[0])]
+            print(filtered_results)
+            # Print the extracted text for each bounding box
+            res = ""
+            for text_info in filtered_results:
+                res += (text_info[1] + " ")
+                print(f'Text in bounding box {box}: {text_info[1]}')
+            extracted_text[temp] = res
+        print(extracted_text)
         # Print the extracted text
         # print("Details:", details_text)
         # print("Aadhar Number:", aadharno_text)
