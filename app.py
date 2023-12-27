@@ -5,10 +5,23 @@ from PIL import Image, ImageDraw
 from io import BytesIO
 import easyocr
 from difflib import SequenceMatcher
+import cv2
+import os
+from tensorflow.keras.models import load_model
+import re
 
 app = Flask(__name__)
 
-txtbbs = {"aadharno":[0, 0, 0, 0], "details":[0, 0, 0, 0]}
+l = ["aadharno", "details", "qr", "emblem", "goi", "image"]
+t = []
+txtbbs = {"aadharno":[0, 0, 0, 0], "details":[0, 0, 0, 0], "qr":[0, 0, 0, 0], "emblem":[0, 0, 0, 0]}
+
+def emblem_class():
+    model = load_model('your_model.h5')
+    image = cv2.imread("emblem.jpg")
+    image = cv2.resize(image, (100, 100))
+    y_pred = model.predict(image.reshape(1, 100, 100, 3))
+    print("real" if y_pred>0.5 else "fake")
 
 def overlay_boxes(image, predictions):
     draw = ImageDraw.Draw(image)
@@ -32,9 +45,9 @@ def overlay_boxes(image, predictions):
             "goi": "purple",
             "emblem": "orange",
         }
-
-        if(class_name == "aadharno" or class_name == "details"):
+        if(class_name in l):
             txtbbs[class_name] = [x, y, x + w, y + h]
+            t.append(class_name)
         # Draw thick filled rectangle as background
         draw.rectangle([x, y, x + w, y + h], outline=class_colors.get(class_name, "white"), width=2)
 
@@ -74,6 +87,12 @@ def aadhar_number_search(text):
 
 #     return extracted_text
 
+def read_qr(imgpth):
+    img = cv2.imread(imgpth)
+    qcd = cv2.QRCodeDetector()
+    retval, decoded_info, points, straight_qrcode = qcd.detectAndDecodeMulti(img)
+    print("qr data",retval, decoded_info, points, straight_qrcode)
+
 
 @app.route('/')
 def index():
@@ -82,6 +101,8 @@ def index():
 @app.route('/submit', methods=['GET', 'POST'])
 def submit():
     try:
+        global t
+        t.clear()
         # Retrieve image data
         image_data_uri = request.json.get('image')
 
@@ -115,36 +136,48 @@ def submit():
         # Save the image with bounding boxes (optional)
         image_with_boxes.save("output_image.jpg")
         # details_region = image.crop(txtbbs["details"])
+        for i in t:
+            region = image.crop(txtbbs[i])
+            region.save(f"./static/detected/{i}.jpg")
+        read_qr("./static/detected/qr.jpg")
+        # qr_region = image.crop(txtbbs["qr"])
+        # qr_region.save("./static/detected/qr.jpg")
+        # read_qr("./static/detected/qr.jpg")
+        # qr_region = image.crop(txtbbs["emblem"])
+        # qr_region.save("./static/detected/emblem.jpg")
+        # emblem_class()
         # aadharno_region = image.crop(txtbbs["aadharno"])
-        reader = easyocr.Reader(['en'])
+        # aadharno_region.save("./static/detected/ano.jpg")
+        # print("aadhar number =", extraction_of_text("./static/detected/ano.jpg"))
+        reader = easyocr.Reader(['hi', 'en'])
         # Perform OCR on the cropped regions
         # details_text = pytesseract.image_to_string(details_region)
         # aadharno_text = pytesseract.image_to_string(aadharno_region)
         # txtbbsread = {}
-        bounding_boxes = [txtbbs["aadharno"], txtbbs["details"]]
-        extracted_text = {0:None, 1:None}
-        temp = -1
-        for box in bounding_boxes:
-            temp+=1
-            if(all(x == 0 for x in box)):
-                continue
-            print(box)
-            x_min, y_min, x_max, y_max = box
-            # Extract text using easyocr with bounding box
-            result = reader.readtext(r"input_image.jpg", allowlist='0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
-                                    text_threshold=0.7, link_threshold=0.4, low_text=0.4,
-                                    decoder='beamsearch', blocklist='')
+        # bounding_boxes = [txtbbs["aadharno"], txtbbs["details"]]
+        # extracted_text = {0:None, 1:None}
+        # temp = -1
+        # for box in bounding_boxes:
+        #     temp+=1
+        #     if(all(x == 0 for x in box)):
+        #         continue
+        #     print(box)
+        #     x_min, y_min, x_max, y_max = box
+        #     # Extract text using easyocr with bounding box
+        #     result = reader.readtext(r"input_image.jpg", allowlist='0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
+        #                             text_threshold=0.7, link_threshold=0.4, low_text=0.4,
+        #                             decoder='beamsearch', blocklist='')
 
-            # Filter results within the bounding box
-            filtered_results = [text_info for text_info in result if any(x_min < x < x_max and y_min < y < y_max for (x, y) in text_info[0])]
-            print(filtered_results)
-            # Print the extracted text for each bounding box
-            res = ""
-            for text_info in filtered_results:
-                res += (text_info[1] + " ")
-                print(f'Text in bounding box {box}: {text_info[1]}')
-            extracted_text[temp] = res
-        print(extracted_text)
+        #     # Filter results within the bounding box
+        #     filtered_results = [text_info for text_info in result if any(x_min < x < x_max and y_min < y < y_max for (x, y) in text_info[0])]
+        #     print(filtered_results)
+        #     # Print the extracted text for each bounding box
+        #     res = ""
+        #     for text_info in filtered_results:
+        #         res += (text_info[1] + " ")
+        #         print(f'Text in bounding box {box}: {text_info[1]}')
+        #     extracted_text[temp] = res
+        # print(extracted_text)
         # Print the extracted text
         # print("Details:", details_text)
         # print("Aadhar Number:", aadharno_text)
@@ -162,7 +195,7 @@ def submit():
         #         image.show()
         # except Exception as e:
         #     print(f"Error opening image: {e}")
-        return jsonify({"roboflow_result": base64_image})
+        return jsonify({"roboflow_result": base64_image, "detected": t})
         # return jsonify({"roboflow_result": 1})
 
     except Exception as e:

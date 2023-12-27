@@ -1,2 +1,4 @@
 node_modules
 dds.py
+*.jpg
+*.jpeg

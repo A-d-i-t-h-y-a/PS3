@@ -12,63 +12,82 @@
         integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN"
         crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-
+    <style>
+        th, tr{
+            text-align: center;
+        }
+    </style>
 </head>
 
-<body>
+<body style="height: 100vh;">
+    <header class="bg-body-secondary pt-2" style="height: 9%;">
+        <h1 class="text-center h-100 fw-bold">Document Verification Using ML</>
+    </header>
+    <div class="container-fluid h-100 d-flex align-items-center justify-content-around flex-wrap w-100">
+        <div class="d-flex flex-column align-items-center border border-primary rounded shadow-lg p-5 bg-body-tertiary overflow-auto"
+            style="margin: 0 2%; min-width: 40%; height: 80%;">
+            <h1>Form Submission</h1>
 
-    <div class="container my-3">
-        <h1>Form Submission</h1>
-
-        <form id="myForm">
-            <!-- Your existing form inputs -->
-            <div class="mb-3 row">
-                <label for="inputName" class="col-sm-2 col-form-label">Name</label>
-                <div class="col-sm-10">
+            <form class="w-100" id="myForm">
+                <!-- Your existing form inputs -->
+                <div class="form-floating mb-3 row align-items-center">
                     <input type="text" class="form-control" id="inputName" placeholder="John Doe" name="name">
+                    <label for="inputName">Name</label>
                 </div>
-            </div>
 
-            <div class="mb-3 row">
-                <label for="inputDob" class="col-sm-2 col-form-label">Date of Birth</label>
-                <div class="col-sm-10">
-                    <input type="text" class="form-control" id="inputDob" placeholder="01/01/1990">
+                <div class="form-floating mb-3 row align-items-center">
+                    <input type="date" class="form-control" id="inputDob" placeholder="01/01/1990" name="dob">
+                    <label for="inputDob">Date of Birth</label>
                 </div>
-            </div>
 
-            <div class="mb-3 row">
-                <label for="inputAge" class="col-sm-2 col-form-label">Age</label>
-                <div class="col-sm-10">
-                    <input type="text" class="form-control" id="inputAge" placeholder="30">
+                <div class="form-floating mb-3 row align-items-center">
+                    <input type="number" class="form-control" id="inputAge" placeholder="30" name="age">
+                    <label for="inputAge">Age</label>
                 </div>
-            </div>
 
-            <div class="mb-3 row">
-                <label for="inputAadhar" class="col-sm-2 col-form-label">Aadhar Number</label>
-                <div class="col-sm-10">
-                    <input type="text" class="form-control" id="inputAadhar" placeholder="1234 5678 9012">
+                <div class="form-floating mb-3 row align-items-center">
+                    <input type="number" class="form-control" id="inputAadhar" placeholder="1234 5678 9012"
+                        name="aadhar">
+                    <label for="inputAadhar">Aadhar Number</label>
                 </div>
-            </div>
-            <div class="mb-3 row">
-                <label for="fileInput" class="col-sm-2 col-form-label">Upload Document</label>
-                <div class="col-sm-10">
+
+                <div class="mb-3 row align-items-center">
                     <input type="file" class="form-control" id="fileInput">
                 </div>
-            </div>
-            <div class="d-grid">
-                <button type="button" class="btn btn-primary" onclick="submitForm()">Submit</button>
-            </div>
-        </form>
-        
-        <div id="resultContainer" class="my-5">
+
+                <div>
+                    <button type="button" class="btn btn-primary w-100" onclick="submitForm()">Submit</button>
+                </div>
+            </form>
+        </div>
+        <div id="resultContainer"
+            class="my-5 d-flex flex-column justify-content-center align-items-center shadow-lg rounded overflow-auto"
+            style="margin: 0 2%; min-width: 40%; height: 80%;">
+            <h1 class="mb-3">Predicted Features</h1>
             <div id="spinner" class="d-flex justify-content-center d-none">
                 <div class="spinner-border" role="status">
                     <span class="visually-hidden">Loading...</span>
                 </div>
             </div>
             <!-- Results will be displayed here -->
-            <img src="" alt="" id="resultImage">
+            <img class="rounded" src="" alt="" id="resultImage">
         </div>
+        <div class="table-responsive w-75 rounded">
+            <table class="table table-striped table-hover table-borderless table-primary align-middle">
+                <thead class="table-light">
+                    <caption>
+                        
+                    </caption>
+                    <tr>
+                        <th>Feature</th>
+                        <th>Image</th>
+                        <th>detected(✔️|❌)</th>
+                    </tr>
+                </thead>
+                <tbody class="table-group-divider"></tbody>
+            </table>
+        </div>
+
     </div>
 
     <script src="{{ url_for('static', filename='index.js') }}"></script>
