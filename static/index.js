@@ -58,13 +58,15 @@ async function submitForm() {
                 <th>Feature</th>
                 <th>Image</th>
                 <th>detected(✔️|❌)</th>
+                <th>extracted</th>
             </tr>`
                 for(let i of temp){
                     const tr = document.createElement("tr");
-                    let det = t.includes(i);
+                    let det = i in t;
                     tr.innerHTML = `<td scope="row" class="feature">${i}</td>
-                    <td class="img">${det ? `<img src="/static/detected/${i}.jpg" alt="">` : 'Unable to Detect'}</td>
-                    <td class="verify">${det ? '✔️' : '❌'}</td>`
+                    <td class="img">${det ? `<img src="/static/detected/${t[i]}.jpg" alt="">` : 'Unable to Detect'}</td>
+                    <td class="verify">${det ? '✔️' : '❌'}</td>
+                    <td class="extract">N/A</td>`
                     tbody.appendChild(tr);
                 }
             }

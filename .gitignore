@@ -1,4 +1,5 @@
 node_modules
 dds.py
-*.jpg
+# *.jpg
 *.jpeg
+*.png

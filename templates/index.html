@@ -23,9 +23,9 @@
     <header class="bg-body-secondary pt-2" style="height: 9%;">
         <h1 class="text-center h-100 fw-bold">Document Verification Using ML</>
     </header>
-    <div class="container-fluid h-100 d-flex align-items-center justify-content-around flex-wrap w-100">
+    <div class="container-fluid h-100 d-flex align-items-center justify-content-between flex-wrap w-100" style="padding: 0 6%;">
         <div class="d-flex flex-column align-items-center border border-primary rounded shadow-lg p-5 bg-body-tertiary overflow-auto"
-            style="margin: 0 2%; min-width: 40%; height: 80%;">
+            style="min-width: 40%; height: 80%;">
             <h1>Form Submission</h1>
 
             <form class="w-100" id="myForm">
@@ -62,7 +62,7 @@
         </div>
         <div id="resultContainer"
             class="my-5 d-flex flex-column justify-content-center align-items-center shadow-lg rounded overflow-auto"
-            style="margin: 0 2%; min-width: 40%; height: 80%;">
+            style="min-width: 40%; height: 80%;">
             <h1 class="mb-3">Predicted Features</h1>
             <div id="spinner" class="d-flex justify-content-center d-none">
                 <div class="spinner-border" role="status">
@@ -72,7 +72,7 @@
             <!-- Results will be displayed here -->
             <img class="rounded" src="" alt="" id="resultImage">
         </div>
-        <div class="table-responsive w-75 rounded">
+        <div class="table-responsive w-100 rounded">
             <table class="table table-striped table-hover table-borderless table-primary align-middle">
                 <thead class="table-light">
                     <caption>
@@ -82,6 +82,7 @@
                         <th>Feature</th>
                         <th>Image</th>
                         <th>detected(✔️|❌)</th>
+                        <th>extracted</th>
                     </tr>
                 </thead>
                 <tbody class="table-group-divider"></tbody>

@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, send_from_directory
 from roboflow import Roboflow
 import base64
 from PIL import Image, ImageDraw
@@ -9,11 +9,13 @@ import cv2
 import os
 from tensorflow.keras.models import load_model
 import re
+import time
+import shutil
 
 app = Flask(__name__)
 
 l = ["aadharno", "details", "qr", "emblem", "goi", "image"]
-t = []
+t = {}
 txtbbs = {"aadharno":[0, 0, 0, 0], "details":[0, 0, 0, 0], "qr":[0, 0, 0, 0], "emblem":[0, 0, 0, 0]}
 
 def emblem_class():
@@ -23,39 +25,42 @@ def emblem_class():
     y_pred = model.predict(image.reshape(1, 100, 100, 3))
     print("real" if y_pred>0.5 else "fake")
 
-def overlay_boxes(image, predictions):
-    draw = ImageDraw.Draw(image)
-    for prediction in predictions:
-        width, height = image.size
-        x_center, y_center, w, h = (
-            prediction["x"],
-            prediction["y"],
-            prediction["width"],
-            prediction["height"],
-        )
-        x, y = x_center - w / 2, y_center - h / 2  # Calculate top-left coordinates
-        class_name = prediction["class"]
+# def overlay_boxes(image, predictions):
+#     draw = ImageDraw.Draw(image)
+#     for prediction in predictions:
+#         width, height = image.size
+#         x_center, y_center, w, h = (
+#             prediction["x"],
+#             prediction["y"],
+#             prediction["width"],
+#             prediction["height"],
+#         )
+#         x, y = x_center - w / 2, y_center - h / 2  # Calculate top-left coordinates
+#         class_name = prediction["class"]
 
-        # Set background color based on class
-        class_colors = {
-            "details": "blue",
-            "qr": "green",
-            "image": "black",
-            "aadharno": "red",
-            "goi": "purple",
-            "emblem": "orange",
-        }
-        if(class_name in l):
-            txtbbs[class_name] = [x, y, x + w, y + h]
-            t.append(class_name)
-        # Draw thick filled rectangle as background
-        draw.rectangle([x, y, x + w, y + h], outline=class_colors.get(class_name, "white"), width=2)
+#         # Set background color based on class
+#         class_colors = {
+#             "details": "blue",
+#             "qr": "green",
+#             "image": "black",
+#             "aadharno": "red",
+#             "goi": "purple",
+#             "emblem": "orange",
+#             "name": "blue",
+#             "dob" : "pink",
+#             "gender" : "yellow"
+#         }
+#         if(class_name in l):
+#             txtbbs[class_name] = [x, y, x + w, y + h]
+#             t[class_name] = ""
+#         # Draw thick filled rectangle as background
+#         draw.rectangle([x, y, x + w, y + h], outline=class_colors.get(class_name, "white"), width=2)
 
-        # Draw class name on top-left corner in white
-        draw.rectangle([x, y, x+50, y+20], fill=class_colors.get(class_name, "white"))
-        draw.text((x, y), class_name, fill="white")
-    print(txtbbs)
-    return image
+#         # Draw class name on top-left corner in white
+#         draw.rectangle([x, y, x+50, y+20], fill=class_colors.get(class_name, "white"))
+#         draw.text((x, y), class_name, fill="white")
+#     print(txtbbs)
+#     return image
 
 def extraction_of_text(image):
     reader = easyocr.Reader(['en'])
@@ -91,7 +96,7 @@ def read_qr(imgpth):
     img = cv2.imread(imgpth)
     qcd = cv2.QRCodeDetector()
     retval, decoded_info, points, straight_qrcode = qcd.detectAndDecodeMulti(img)
-    print("qr data",retval, decoded_info, points, straight_qrcode)
+    print("qr data",decoded_info)
 
 
 @app.route('/')
@@ -121,9 +126,14 @@ def submit():
         # Save the image to a file
         image.save("input_image.jpg")
 
-        rf = Roboflow(api_key="RMzZna7r8BabI0Fz7SJV")
-        project = rf.workspace().project("aadhardetection")
-        model = project.version(3).model
+        # rf = Roboflow(api_key="RMzZna7r8BabI0Fz7SJV")
+        # project = rf.workspace().project("aadhardetect")
+        # model = project.version(3).model
+
+        rf = Roboflow(api_key="ZLHtscupsDPcPqZc4ouB")
+        project = rf.workspace().project("aadhardetect")
+        model = project.version(6).model
+        
         # jsonimage = model.predict("input_image.jpg", confidence=40, overlap=30).json();
         prediction_result = model.predict("input_image.jpg", confidence=40, overlap=30)
 
@@ -136,10 +146,18 @@ def submit():
         # Save the image with bounding boxes (optional)
         image_with_boxes.save("output_image.jpg")
         # details_region = image.crop(txtbbs["details"])
+        pth = "static/detected"
+        if(os.path.exists(pth)):
+            shutil.rmtree(pth)
+            os.mkdir(pth)
+        else:
+            os.mkdir(pth)
         for i in t:
             region = image.crop(txtbbs[i])
-            region.save(f"./static/detected/{i}.jpg")
-        read_qr("./static/detected/qr.jpg")
+            val = i + str(time.time())
+            t[i] = val
+            region.save(f"./static/detected/{val}.jpg")
+        read_qr(f"./static/detected/{t[i]}.jpg")
         # qr_region = image.crop(txtbbs["qr"])
         # qr_region.save("./static/detected/qr.jpg")
         # read_qr("./static/detected/qr.jpg")
@@ -195,7 +213,9 @@ def submit():
         #         image.show()
         # except Exception as e:
         #     print(f"Error opening image: {e}")
-        return jsonify({"roboflow_result": base64_image, "detected": t})
+        response = jsonify({"roboflow_result": base64_image, "detected": t})
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        return response
         # return jsonify({"roboflow_result": 1})
 
     except Exception as e:
