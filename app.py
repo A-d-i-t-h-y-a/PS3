@@ -25,42 +25,42 @@ def emblem_class():
     y_pred = model.predict(image.reshape(1, 100, 100, 3))
     print("real" if y_pred>0.5 else "fake")
 
-# def overlay_boxes(image, predictions):
-#     draw = ImageDraw.Draw(image)
-#     for prediction in predictions:
-#         width, height = image.size
-#         x_center, y_center, w, h = (
-#             prediction["x"],
-#             prediction["y"],
-#             prediction["width"],
-#             prediction["height"],
-#         )
-#         x, y = x_center - w / 2, y_center - h / 2  # Calculate top-left coordinates
-#         class_name = prediction["class"]
+def overlay_boxes(image, predictions):
+    draw = ImageDraw.Draw(image)
+    for prediction in predictions:
+        width, height = image.size
+        x_center, y_center, w, h = (
+            prediction["x"],
+            prediction["y"],
+            prediction["width"],
+            prediction["height"],
+        )
+        x, y = x_center - w / 2, y_center - h / 2  # Calculate top-left coordinates
+        class_name = prediction["class"]
 
-#         # Set background color based on class
-#         class_colors = {
-#             "details": "blue",
-#             "qr": "green",
-#             "image": "black",
-#             "aadharno": "red",
-#             "goi": "purple",
-#             "emblem": "orange",
-#             "name": "blue",
-#             "dob" : "pink",
-#             "gender" : "yellow"
-#         }
-#         if(class_name in l):
-#             txtbbs[class_name] = [x, y, x + w, y + h]
-#             t[class_name] = ""
-#         # Draw thick filled rectangle as background
-#         draw.rectangle([x, y, x + w, y + h], outline=class_colors.get(class_name, "white"), width=2)
+        # Set background color based on class
+        class_colors = {
+            "details": "blue",
+            "qr": "green",
+            "image": "black",
+            "aadharno": "red",
+            "goi": "purple",
+            "emblem": "orange",
+            "name": "blue",
+            "dob" : "pink",
+            "gender" : "yellow"
+        }
+        if(class_name in l):
+            txtbbs[class_name] = [x, y, x + w, y + h]
+            t[class_name] = ""
+        # Draw thick filled rectangle as background
+        draw.rectangle([x, y, x + w, y + h], outline=class_colors.get(class_name, "white"), width=2)
 
-#         # Draw class name on top-left corner in white
-#         draw.rectangle([x, y, x+50, y+20], fill=class_colors.get(class_name, "white"))
-#         draw.text((x, y), class_name, fill="white")
-#     print(txtbbs)
-#     return image
+        # Draw class name on top-left corner in white
+        draw.rectangle([x, y, x+50, y+20], fill=class_colors.get(class_name, "white"))
+        draw.text((x, y), class_name, fill="white")
+    print(txtbbs)
+    return image
 
 def extraction_of_text(image):
     reader = easyocr.Reader(['en'])
